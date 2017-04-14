@@ -1,0 +1,100 @@
+,question,category
+0,你好,你好
+1,我想看辆车,看车
+2,我要看辆车,看车
+3,我要买辆车,看车
+4,我想买辆车,看车
+5,我要买车,看车
+6,我要看车,看车
+7,给我看辆 <modeldesc> 的车,SEARCH
+8,我想看 <modeldesc> 的,SEARCH
+9, <factoryprice> 的车有哪些推荐的,SEARCH
+10,我想看辆 <factoryprice> 的车,SEARCH
+11,我想看辆 <factoryprice> 的车,SEARCH
+12,我要买一辆 <grade> ，最近有什么新款没有,SEARCH
+13,你这有 <factory> 的车么？,SEARCH
+14,我想看一辆 <factory> 的车,SEARCH
+15,我想看一辆 <seatnum> 的车,SEARCH
+16,我想看辆 <factory> 的车,SEARCH
+17,我想看辆 <factory> <terminology> 的车,SEARCH
+18,你这有没有 <modeldesc> 的车,SEARCH
+19,目前都有什么车在卖,SEARCH
+20,给我看一辆 <modeldesc> 的车,SEARCH
+21,我想看 <modeldesc> 的车,SEARCH
+22,我要 <modeldesc> ,SEARCH
+23,我要 <factory> ,SEARCH
+24,你这有 <modeldesc> 的车么,SEARCH
+25,给我看辆 <grade> 的车,SEARCH
+26,你知道 <factory> 么,SEARCH
+27, <modeldesc> 来 <seatnum> ,SEARCH
+28,这辆车 <factoryprice> ,QUERY
+29, <factoryprice> ,QUERY
+30, <factoryprice> 是多少,QUERY
+31,都有什么颜色,QUERY
+32,都有什么 <grade> 的,QUERY
+33,都有哪些 <factory> ,QUERY
+34,都有什么 <modeldesc> 的？,QUERY
+35,什么 <modeldesc> ,QUERY
+36,都有什么,QUERY
+37, <columns> 多少,QUERY
+38, <transmisson> 还是 <transmisson> ,QUERY
+39, <columns> 是多少,QUERY
+40, <columns> 是多少,QUERY
+41,什么 <grade> 的,QUERY
+42,多少个 <seatnum> ,QUERY
+43,支持 <columns> 功能么,QUERY
+44,有没有 <columns> 接口,QUERY
+45,有没有 <modeldesc> 操作系统,QUERY
+46, <modeldesc> 的排风口在哪里,QUERY
+47,有没有后排 <modeldesc> 的排风口,QUERY
+48,座椅的材质是什么,QUERY
+49,有没有侧边雷达,QUERY
+50, <rfuelconsumption> 是多少,QUERY
+51,这辆车的 <rfuelconsumption> 是多少,QUERY
+52,质保时间有多长,QUERY
+53,具体有哪些 <modeldesc> 的,QUERY
+54,有哪些 <modeldesc> 的,QUERY
+55,这辆车的安全性怎么样,FUZZYQUERY
+56,各自的配置是什么样,FUZZYQUERY
+57,有什么安全 <modeldesc> ,FUZZYQUERY
+58, <modeldesc> 是什么样的,FUZZYQUERY
+59,问下 <modeldesc> 的车现在 <factoryprice> ,SEARCHQUERY
+60, <modeldesc> 的 <factoryprice> 是多少,SEARCHQUERY
+61, <modeldesc> 的车都有哪些 <modeldesc> 的,SEARCHQUERY
+62, <factory> 都有哪些 <modeldesc> ,SEARCHQUERY
+63, <modeldesc>  <modeldesc>  <factoryprice> ,SEARCHQUERY
+64, <factory>  <modeldesc>  <factoryprice> ,SEARCHQUERY
+65, <factoryprice> ,PARA
+66, <number> ,PARA
+67, <factory> ,PARA
+68, <factory> <terminology> ,PARA
+69, <modeldesc> ,PARA
+70, <modeldesc> ,PARA
+71, <seatnum> ,PARA
+72, <grade> ,PARA
+73, <grade> ,PARA
+74,什么是 <terminology> ,TERMINOLOGY
+75,什么是 <factory> <terminology> ,TERMINOLOGY
+76, <terminology> 是什么,TERMINOLOGY
+77, <factory> <terminology> 是什么,TERMINOLOGY
+78,解释下 <terminology> ,TERMINOLOGY
+79,解释下 <factory> <terminology> ,TERMINOLOGY
+80,【收到不支持的消息 <grade> ，暂无法显示】,收到不支持的消息类型
+81,你这有没有 <modeldesc> 的车,YOUQUERY
+82,这辆车的 <columns> 怎么样,QUERY
+83,有 <colour> 的吗,ISQUERY
+84,有没有 <colour> 的,ISQUERY
+85,有 <columns> 么,ISQUERY
+86,有没有 <columns> ,ISQUERY
+87,有没有 <columns> 功能,ISQUERY
+88,是不是 <grade> ,ISQUERY
+89,支不支持 <columns> ,ISQUERY
+90,具体有哪些 <modeldesc> 的,QUERY
+91,是 <transmisson> 还是 <transmisson> 的,QUERY
+92, <modeldesc>  <modeldesc> 是 <transmisson> 还是 <transmisson> 的,QUERY
+93,有优惠么,有优惠么
+94, <alr100kmh> 是多少,QUERY
+95, <rfuelconsumption> 是多少,QUERY
+96, <rfuelconsumption> 有点太高了吧,油耗太高
+97,那怎样可以试车呢,如何试车
+98,帮我安排下试车,安排试车
