@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import jieba as jb
 
-exclude_re = re.compile("[,，【】<>{};'\"]")
+exclude_re = re.compile(u"[,，【】<>{};?？'\"]")
 
 filepath = os.path.split(os.path.realpath(__file__))[0]
 
@@ -39,13 +39,22 @@ def cut2list(string):
 def vectorize_data(data, word_idx, sentence_size):
     Q = []
     C = []
+    Ans = []
+
     for question, category in data:
         quesl = cut2list(question)
         lq = max(0, sentence_size - len(quesl))
         q = [word_idx[w] for w in quesl] + [0] * lq
-        catel = cut2list(category)
-        lq = max(0, sentence_size - len(catel))
-        c = [word_idx[w] for w in catel] + [0] * lq
+        if category not in Ans:
+            Ans.append(category)
         Q.append(q)
-        C.append(c)
-    return np.array(Q), np.array(C)
+
+    answer_size = len(Ans)
+
+    for _, category in data:
+        y = np.zeros(answer_size)
+        index = Ans.index(category)
+        y[index] = 1
+        C.append(y)
+
+    return np.array(Q), np.array(C), answer_size

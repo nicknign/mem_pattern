@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/env python
-from __future__ import absolute_import
-from __future__ import print_function
-
 from data_unit import load_task, cut2list, vectorize_data
 from pattern import MemN2N
-from six.moves import range, reduce
-from sklearn import metrics
+from six.moves import range
+from functools import reduce
+# from sklearn import metrics
 
 import tensorflow as tf
 import numpy as np
@@ -31,23 +29,24 @@ print("Started Training")
 train, test = load_task()
 data = train + test
 
-vocab = sorted(reduce(lambda x, y: x | y, (set(cut2list(q + " " + c)) for q, c in data)))
+vocab = sorted(reduce(lambda x, y: x | y, (set(cut2list(q)) for q, c in data)))
 word_idx = dict((c, i + 1) for i, c in enumerate(vocab))
 
-sentence_size = max(map(len, (q for q, _ in data)))
-vocab_size = len(word_idx) + 1  # +1 for nil word
+sentence_size = max(map(len, (q for q, c in data)))
+vocab_size = len(vocab) + 1  # +1 for nil word
 
-Q, C = vectorize_data(data, word_idx, sentence_size)
+Q, C, answer_size = vectorize_data(data, word_idx, sentence_size)
 
 n_train = Q.shape[0]
 
+tf.set_random_seed(FLAGS.random_state)
 batch_size = FLAGS.batch_size
 
 batches = zip(range(0, n_train-batch_size, batch_size), range(batch_size, n_train, batch_size))
 batches = [(start, end) for start, end in batches]
 
 with tf.Session() as sess:
-    model = MemN2N(batch_size, vocab_size, sentence_size, FLAGS.embedding_size, session=sess,
+    model = MemN2N(batch_size, answer_size, sentence_size, vocab_size, FLAGS.embedding_size, session=sess,
                    hops=FLAGS.hops, max_grad_norm=FLAGS.max_grad_norm)
     for t in range(1, FLAGS.epochs+1):
         # Stepped learning rate
