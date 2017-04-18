@@ -58,7 +58,7 @@ def add_gradient_noise(t, stddev=1e-3, name=None):
 
 class MemN2N(object):
     """End-To-End Memory Network."""
-    def __init__(self, batch_size, vocab_size, sentence_size, memory_size, embedding_size,
+    def __init__(self, batch_size, vocab_size, sentence_size, embedding_size,
         hops=3,
         max_grad_norm=40.0,
         nonlin=None,
