@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/env python
+from __future__ import absolute_import
+from __future__ import print_function
+
 from data_unit import load_task, cut2list, vectorize_data
 from pattern import MemN2N
 from six.moves import range
 from functools import reduce
-# from sklearn import metrics
+from sklearn import cross_validation, metrics
 
 import tensorflow as tf
 import numpy as np
@@ -18,7 +21,7 @@ tf.flags.DEFINE_integer("evaluation_interval", 10, "Evaluate and print results e
 tf.flags.DEFINE_integer("batch_size", 32, "Batch size for training.")
 tf.flags.DEFINE_integer("hops", 3, "Number of hops in the Memory Network.")
 tf.flags.DEFINE_integer("epochs", 100, "Number of epochs to train for.")
-tf.flags.DEFINE_integer("embedding_size", 20, "Embedding size for embedding matrices.")
+tf.flags.DEFINE_integer("embedding_size", 30, "Embedding size for embedding matrices.")
 tf.flags.DEFINE_integer("memory_size", 50, "Maximum size of memory.")
 tf.flags.DEFINE_integer("random_state", None, "Random state.")
 FLAGS = tf.flags.FLAGS
@@ -37,6 +40,10 @@ vocab_size = len(vocab) + 1  # +1 for nil word
 
 Q, C, answer_size = vectorize_data(data, word_idx, sentence_size)
 
+c_res = []
+for i in C.tolist():
+    c_res.append(i.index(1) + 1)
+
 n_train = Q.shape[0]
 
 tf.set_random_seed(FLAGS.random_state)
@@ -46,7 +53,7 @@ batches = zip(range(0, n_train-batch_size, batch_size), range(batch_size, n_trai
 batches = [(start, end) for start, end in batches]
 
 with tf.Session() as sess:
-    model = MemN2N(batch_size, answer_size, sentence_size, vocab_size, FLAGS.embedding_size, session=sess,
+    model = MemN2N(batch_size, answer_size, sentence_size, FLAGS.embedding_size, vocab_size, session=sess,
                    hops=FLAGS.hops, max_grad_norm=FLAGS.max_grad_norm)
     for t in range(1, FLAGS.epochs+1):
         # Stepped learning rate
@@ -61,7 +68,8 @@ with tf.Session() as sess:
         for start, end in batches:
             q = Q[start:end]
             c = C[start:end]
-            cost_t = model.batch_fit(q, c, lr)
+            cost_t, summary = model.batch_fit(q, c, lr)
+            model.writer.add_summary(summary)
             total_cost += cost_t
 
         if t % FLAGS.evaluation_interval == 0:
@@ -72,10 +80,13 @@ with tf.Session() as sess:
                 pred = model.predict(q)
                 train_preds += list(pred)
 
-            train_acc = metrics.accuracy_score(np.array(train_preds), C)
+            train_acc = metrics.accuracy_score(np.array(train_preds), c_res)
 
             print('-----------------------')
             print('Epoch', t)
             print('Total Cost:', total_cost)
             print('Training Accuracy:', train_acc)
             print('-----------------------')
+            model.saver.save(sess, './tensorboard/logs/data.chkp')
+
+

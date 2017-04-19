@@ -101,6 +101,8 @@ class MemN2N(object):
             name: Name of the End-To-End Memory Network. Defaults to `MemN2N`.
         """
 
+        self.writer = tf.summary.FileWriter("./tensorboard/logs", session.graph)
+
         self._batch_size = batch_size
         self._answer_size = answer_size
         self._vocab_size = vocab_size
@@ -126,6 +128,7 @@ class MemN2N(object):
 
         # loss op
         loss_op = cross_entropy_sum
+        tf.summary.scalar("cost", loss_op)
 
         # gradient pipeline
         grads_and_vars = self._opt.compute_gradients(loss_op)
@@ -154,6 +157,9 @@ class MemN2N(object):
         init_op = tf.global_variables_initializer()
         self._sess = session
         self._sess.run(init_op)
+        self.saver = tf.train.Saver()
+        self.merge = tf.summary.merge_all()
+
 
     def _build_inputs(self):
         self._queries = tf.placeholder(tf.int32, [None, self._sentence_size], name="queries")
@@ -165,14 +171,21 @@ class MemN2N(object):
             nil_word_slot = tf.zeros([1, self._embedding_size])
             A = tf.concat(axis=0, values=[nil_word_slot, self._init([self._vocab_size-1, self._embedding_size])])
             C = tf.concat(axis=0, values=[nil_word_slot, self._init([self._vocab_size-1, self._embedding_size])])
+            W = self._init([self._answer_size, self._embedding_size])
 
+
+            self.W = tf.Variable(W, name="W")
             self.A_1 = tf.Variable(A, name="A")
+
+            tf.summary.histogram('W', self.W)
+            tf.summary.histogram('A_1', self.A_1)
 
             self.C = []
 
             for hopn in range(self._hops):
                 with tf.variable_scope('hop_{}'.format(hopn)):
                     self.C.append(tf.Variable(C, name="C"))
+                    tf.summary.histogram('hop_{}'.format(hopn), self.C[-1])
 
             # Dont use projection for layerwise weight sharing
             # self.H = tf.Variable(self._init([self._embedding_size, self._embedding_size]), name="H")
@@ -200,19 +213,19 @@ class MemN2N(object):
                         m_A = tf.reduce_sum(m_emb_A * self._encoding, 1)
 
                 # hack to get around no reduce_dot
-                u_temp = tf.transpose(tf.expand_dims(u[-1], -1), [0, 2, 1])
-                dotted = tf.reduce_sum(m_A * u_temp, 2)
+                u_temp = tf.transpose(u[-1], [0, 1])
+                dotted = tf.reduce_sum(m_A * u_temp, 1)
 
                 # Calculate probabilities
                 probs = tf.nn.softmax(dotted)
 
-                probs_temp = tf.transpose(tf.expand_dims(probs, -1), [0, 2, 1])
+                probs_temp = tf.transpose(tf.expand_dims(probs, -1), [1, 0])
                 with tf.variable_scope('hop_{}'.format(hopn)):
                     m_emb_C = tf.nn.embedding_lookup(self.C[hopn], queries)
                 m_C = tf.reduce_sum(m_emb_C * self._encoding, 1)
 
-                c_temp = tf.transpose(m_C, [0, 1])
-                o_k = tf.reduce_sum(c_temp * probs_temp, 2)
+                c_temp = tf.transpose(m_C, [1, 0])
+                o_k = tf.reduce_sum(c_temp * probs_temp, 1)
 
                 # Dont use projection layer for adj weight sharing
                 # u_k = tf.matmul(u[-1], self.H) + o_k
@@ -227,7 +240,7 @@ class MemN2N(object):
 
             # Use last C for output (transposed)
             with tf.variable_scope('hop_{}'.format(self._hops)):
-                return tf.matmul(u_k, tf.transpose(self.C[-1], [1,0]))
+                return tf.matmul(u_k, tf.transpose(self.W, [1,0]))
 
     def batch_fit(self, queries, answers, learning_rate):
         """Runs the training algorithm over the passed batch
@@ -241,8 +254,10 @@ class MemN2N(object):
             loss: floating-point number, the loss computed for the batch
         """
         feed_dict = {self._queries: queries, self._answers: answers, self._lr: learning_rate}
-        loss, _ = self._sess.run([self.loss_op, self.train_op], feed_dict=feed_dict)
-        return loss
+
+        loss, _, summary = self._sess.run([self.loss_op, self.train_op, self.merge], feed_dict=feed_dict)
+
+        return loss, summary
 
     def predict(self, queries):
         """Predicts answers as one-hot encoding.
