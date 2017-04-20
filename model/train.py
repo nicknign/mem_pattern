@@ -4,10 +4,10 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 from data_unit import load_task, cut2list, vectorize_data
-from pattern import MemN2N
+from nnmodel import MemN2N
 from six.moves import range
 from functools import reduce
-from sklearn import cross_validation, metrics
+from sklearn import metrics
 
 import tensorflow as tf
 import numpy as np
@@ -20,7 +20,7 @@ tf.flags.DEFINE_float("max_grad_norm", 40.0, "Clip gradients to this norm.")
 tf.flags.DEFINE_integer("evaluation_interval", 10, "Evaluate and print results every x epochs")
 tf.flags.DEFINE_integer("batch_size", 32, "Batch size for training.")
 tf.flags.DEFINE_integer("hops", 3, "Number of hops in the Memory Network.")
-tf.flags.DEFINE_integer("epochs", 100, "Number of epochs to train for.")
+tf.flags.DEFINE_integer("epochs", 500, "Number of epochs to train for.")
 tf.flags.DEFINE_integer("embedding_size", 30, "Embedding size for embedding matrices.")
 tf.flags.DEFINE_integer("memory_size", 50, "Maximum size of memory.")
 tf.flags.DEFINE_integer("random_state", None, "Random state.")
@@ -42,7 +42,7 @@ Q, C, answer_size = vectorize_data(data, word_idx, sentence_size)
 
 c_res = []
 for i in C.tolist():
-    c_res.append(i.index(1) + 1)
+    c_res.append(i.index(1))
 
 n_train = Q.shape[0]
 
