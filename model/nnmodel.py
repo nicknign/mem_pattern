@@ -306,3 +306,11 @@ class Model(object):
     def predict(self, query):
         answer = ""
         pass
+
+
+if __name__ == "__main__":
+    # for test
+    modeldir = "./logs"
+    model = Model(modeldir)
+    while(1):
+        print(model.predict(raw_input(">")))
