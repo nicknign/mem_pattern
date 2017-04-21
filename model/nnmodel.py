@@ -7,7 +7,10 @@ from __future__ import division
 
 import tensorflow as tf
 import numpy as np
+import json
+import ConfigParser
 from six.moves import range
+from data_unit import cut2list
 
 
 def position_encoding(sentence_size, embedding_size):
@@ -77,10 +80,6 @@ class MemN2N(object):
             sentence_size: The max size of a sentence in the data. All sentences should be padded
             to this length. If padding is required it should be done with nil one-hot encoding (0).
 
-            memory_size: The max size of the memory. Since Tensorflow currently does not support jagged arrays
-            all memories must be padded to this length. If padding is required, the extra memories should be
-            empty memories; memories filled with the nil word ([0, 0, 0, ......, 0]).
-
             embedding_size: The size of the word embedding.
 
             hops: The number of hops. A hop consists of reading and addressing a memory slot.
@@ -92,8 +91,6 @@ class MemN2N(object):
 
             initializer: Weight initializer. Defaults to `tf.random_normal_initializer(stddev=0.1)`.
 
-            optimizer: Optimizer algorithm used for SGD. Defaults to `tf.train.AdamOptimizer(learning_rate=1e-2)`.
-
             encoding: A function returning a 2D Tensor (sentence_size, embedding_size). Defaults to `position_encoding`.
 
             session: Tensorflow Session the model is run with. Defaults to `tf.Session()`.
@@ -102,6 +99,9 @@ class MemN2N(object):
         """
 
         self.writer = tf.summary.FileWriter("./tensorboard/logs", session.graph)
+        self.vacob = {}
+        self.answer = []
+
 
         self._batch_size = batch_size
         self._answer_size = answer_size
@@ -246,7 +246,7 @@ class MemN2N(object):
         """Runs the training algorithm over the passed batch
 
         Args:
-            stories: Tensor (None, memory_size, sentence_size)
+            learning_rate: Tensor (None, memory_size, sentence_size)
             queries: Tensor (None, sentence_size)
             answers: Tensor (None, vocab_size)
 
@@ -263,7 +263,6 @@ class MemN2N(object):
         """Predicts answers as one-hot encoding.
 
         Args:
-            stories: Tensor (None, memory_size, sentence_size)
             queries: Tensor (None, sentence_size)
 
         Returns:
@@ -276,7 +275,6 @@ class MemN2N(object):
         """Predicts probabilities of answers.
 
         Args:
-            stories: Tensor (None, memory_size, sentence_size)
             queries: Tensor (None, sentence_size)
 
         Returns:
@@ -286,31 +284,62 @@ class MemN2N(object):
         return self._sess.run(self.predict_proba_op, feed_dict=feed_dict)
 
     def predict_log_proba(self, queries):
-        """Predicts log probabilities of answers.
+            """Predicts log probabilities of answers.
+    
+            Args:
+                queries: Tensor (None, sentence_size)
+            Returns:
+                answers: Tensor (None, vocab_size)
+            """
+            feed_dict = {self._queries: queries}
+            return self._sess.run(self.predict_log_proba_op, feed_dict=feed_dict)
 
-        Args:
-            stories: Tensor (None, memory_size, sentence_size)
-            queries: Tensor (None, sentence_size)
-        Returns:
-            answers: Tensor (None, vocab_size)
-        """
-        feed_dict = {self._queries: queries}
-        return self._sess.run(self.predict_log_proba_op, feed_dict=feed_dict)
+    def load(self, checkpoint_dir):
+        with open("./data/vocab.json", 'r') as pf:
+            self.vacob = json.load(pf)
+        with open("./data/ans.json", 'r') as pf:
+            self.answer = json.load(pf)
+        ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
+        if ckpt and ckpt.model_checkpoint_path:
+            self.saver.restore(self._sess, ckpt.model_checkpoint_path)
+        else:
+            tf.logging.error("model restore wrong!")
 
+    def string_to_vec(self, string):
+        vec = [0]*self._sentence_size
+        strlist = cut2list(string)
+        for index, word in enumerate(strlist):
+            if self.vacob.get(word):
+                vec[index] = self.vacob[word]
+        return vec
 
+    def vec_to_answer(self, maxindex):
+        return self.answer[maxindex]
 
-class Model(object):
-    def __init__(self, modeldir):
-        pass
-
-    def predict(self, query):
-        answer = ""
-        pass
+    def respond(self, query):
+        qvec = self.string_to_vec(query)
+        feed_dict = {self._queries:[qvec]}
+        maxindex = self._sess.run(self.predict_op, feed_dict=feed_dict)
+        answer = self.vec_to_answer(maxindex[0])
+        return answer
 
 
 if __name__ == "__main__":
     # for test
-    modeldir = "./logs"
-    model = Model(modeldir)
-    while(1):
-        print(model.predict(raw_input(">")))
+    mdir = "./tensorboard/logs/"
+    conf = ConfigParser.ConfigParser()
+    conf.read("./data/RNN.cfg")
+    batch_size = int(conf.get("RNN", "batch_size"))
+    answer_size = int(conf.get("RNN", "answer_size"))
+    sentence_size = int(conf.get("RNN", "sentence_size"))
+    embedding_size = int(conf.get("RNN", "embedding_size"))
+    vocab_size = int(conf.get("RNN", "vocab_size"))
+    hops = int(conf.get("RNN", "hops"))
+    max_grad_norm = float(conf.get("RNN", "max_grad_norm"))
+
+    with tf.Session() as sess:
+        model = MemN2N(batch_size, answer_size, sentence_size, embedding_size, vocab_size, session=sess,
+                       hops=hops, max_grad_norm=max_grad_norm)
+        model.load('./tensorboard/logs/')
+        while(1):
+            print(model.respond(raw_input(">")))

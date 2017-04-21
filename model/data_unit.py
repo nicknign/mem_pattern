@@ -8,12 +8,18 @@ import re
 import numpy as np
 import pandas as pd
 import jieba as jb
+import json
 
 exclude_re = re.compile(u"[,，【】<>{};?？'\"]")
 
 filepath = os.path.split(os.path.realpath(__file__))[0]
 
 jb.load_userdict("{}/fenci.txt".format(filepath))
+
+
+def save_file(data, fpath):
+    with open(fpath, "w") as pf:
+        json.dump(data, pf)
 
 
 def load_task():
@@ -56,5 +62,8 @@ def vectorize_data(data, word_idx, sentence_size):
         index = Ans.index(category)
         y[index] = 1
         C.append(y)
+
+    save_file(word_idx, "./data/vocab.json")
+    save_file(Ans, "./data/ans.json")
 
     return np.array(Q), np.array(C), answer_size
