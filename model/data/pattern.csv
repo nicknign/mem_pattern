@@ -54,10 +54,6 @@ question,category
 质保时间有多长,QUERY
 具体有哪些型号的,QUERY
 有哪些版本的,QUERY
-这辆车的安全性怎么样,FUZZYQUERY
-各自的配置是什么样,FUZZYQUERY
-有什么安全装备,FUZZYQUERY
-内饰是什么样的,FUZZYQUERY
 问下长安CS15的车现在怎么卖,SEARCHQUERY
 长安CS15的价格是多少,SEARCHQUERY
 长安CS15的车都有哪些款式的,SEARCHQUERY
@@ -98,3 +94,13 @@ CS15手动舒适版是手动挡还是自动挡的,QUERY
 油耗有点太高了吧,油耗太高
 那怎样可以试车呢,如何试车
 帮我安排下试车,安排试车
+好的了解的差不多了我考虑考虑,用户考虑
+我考虑考虑,用户考虑
+这辆车性能怎么样,HOW
+驾驶怎么样,HOW
+舒适度如何,HOW
+做工细节怎么样,HOW
+操控性怎么样,HOW
+内饰怎么样,HOW
+油耗怎么样,HOW
+油耗如何,HOW
