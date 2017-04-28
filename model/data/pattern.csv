@@ -11,8 +11,9 @@ question,category
 20万到30万的车有哪些推荐的,SEARCH
 我想看辆二三十万的车,SEARCH
 我想看辆20万左右的车,SEARCH
-我要买一辆中型SUV，最近有什么新款没有,SEARCH
-你这有长安的车么？,SEARCH
+我要买一辆中型SUV,SEARCH
+最近有什么新款没有,SEARCH
+你这有长安的车么,SEARCH
 我想看一辆长安的车,SEARCH
 我想看一辆5座的车,SEARCH
 我想看辆长安的车,SEARCH
@@ -33,7 +34,7 @@ question,category
 都有什么颜色,QUERY
 都有什么类型的,QUERY
 都有哪些厂商,QUERY
-都有什么型号的？,QUERY
+都有什么型号的,QUERY
 什么型号,QUERY
 都有什么,QUERY
 排量多少,QUERY
@@ -54,6 +55,7 @@ question,category
 质保时间有多长,QUERY
 具体有哪些型号的,QUERY
 有哪些版本的,QUERY
+发动机的排量是多少,QUERY
 问下长安CS15的车现在怎么卖,SEARCHQUERY
 长安CS15的价格是多少,SEARCHQUERY
 长安CS15的车都有哪些款式的,SEARCHQUERY
@@ -93,6 +95,7 @@ CS15手动舒适版是手动挡还是自动挡的,QUERY
 油耗是多少,QUERY
 油耗有点太高了吧,油耗太高
 那怎样可以试车呢,如何试车
+我想试试这辆车怎么办,如何试车
 帮我安排下试车,安排试车
 好的了解的差不多了我考虑考虑,用户考虑
 我考虑考虑,用户考虑
@@ -104,3 +107,14 @@ CS15手动舒适版是手动挡还是自动挡的,QUERY
 内饰怎么样,HOW
 油耗怎么样,HOW
 油耗如何,HOW
+安全性如何,安全性
+这辆车的安全性怎么样,安全性
+车上有什么安全装备,安全性
+有什么安全性装备,安全性
+有什么安全措施,安全性
+是否有真皮方向盘,ISQUERY
+有夜视系统么,ISQUERY
+有没有真皮座椅,ISQUERY
+有没有真皮方向盘,ISQUERY
+内饰有哪些,内饰
+内饰都有什么,内饰

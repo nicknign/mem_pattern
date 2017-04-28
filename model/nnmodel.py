@@ -9,6 +9,7 @@ import tensorflow as tf
 import numpy as np
 import json
 import ConfigParser
+from word import Word
 from six.moves import range
 from data_unit import cut2list
 
@@ -101,7 +102,7 @@ class MemN2N(object):
         self.writer = tf.summary.FileWriter("./tensorboard/logs", session.graph)
         self.vacob = {}
         self.answer = []
-
+        self.word = Word()
 
         self._batch_size = batch_size
         self._answer_size = answer_size
@@ -295,6 +296,7 @@ class MemN2N(object):
             return self._sess.run(self.predict_log_proba_op, feed_dict=feed_dict)
 
     def load(self, checkpoint_dir):
+        tf.logging.warning("model start load")
         with open("./data/vocab.json", 'r') as pf:
             self.vacob = json.load(pf)
         with open("./data/ans.json", 'r') as pf:
@@ -302,15 +304,31 @@ class MemN2N(object):
         ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
         if ckpt and ckpt.model_checkpoint_path:
             self.saver.restore(self._sess, ckpt.model_checkpoint_path)
+            tf.logging.warning("model restore success")
         else:
             tf.logging.error("model restore wrong!")
+
+    def find_simword(self, word):
+        simword = ""
+        maxscore = 0
+        for index, value in enumerate(self.vacob.keys()):
+            score = self.word.word_sim(value, word)
+            if score > maxscore:
+                simword = value
+                maxscore = score
+        tf.logging.warning("find_simword, word is {}, simword is {}".format(word, simword))
+        return simword
 
     def string_to_vec(self, string):
         vec = [0]*self._sentence_size
         strlist = cut2list(string)
         for index, word in enumerate(strlist):
+            self.word.word_vec(word)
             if self.vacob.get(word):
                 vec[index] = self.vacob[word]
+            # else:
+            #   simword = self.find_simword(word)
+            #   vec[index] = self.vacob[simword]
         return vec
 
     def vec_to_answer(self, maxindex):
