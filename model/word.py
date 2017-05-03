@@ -3,6 +3,7 @@
 import sys
 import os
 import time
+import json
 import tensorflow as tf
 from aip import AipNlp
 import pandas as pd
@@ -27,14 +28,14 @@ class Word(object):
             sim = result['sim']['sim']
         return sim
 
-    def add_vec(self, word, vec):
+    def add_vec(self, word, vecjs):
         columns = ["word", "vec"]
-        df = pd.DataFrame([[word, vec]], columns=columns)
+        df = pd.DataFrame([[word, vecjs]], columns=columns)
         self.vecdf = self.vecdf.append(df, ignore_index=True)
-        os.remove("./data/vec.csv")
-        self.vecdf.to_csv("./data/vec.csv")
+        self.vecdf.to_csv("./data/vec.csv", encoding="utf_8", index=False)
 
     def word_vec(self, word):
+        tf.logging.debug("wordvec word:{}".format(unicode(word)))
         df = self.vecdf.loc[self.vecdf["word"] == word]
         if df.shape[0]:
             vec = df.iloc[0]["vec"]
@@ -42,7 +43,7 @@ class Word(object):
 
         result = {}
         for i in range(10):
-            result = self.aip.wordembedding(unicode(word))
+            result = self.aip.wordembedding(unicode(word.lower()))
             tf.logging.warning("wordvec result:{}".format(unicode(result)))
             if result.get('error_code'):
                 time.sleep(1)
@@ -51,5 +52,14 @@ class Word(object):
         vec = None
         if result.get('vec'):
             vec = result['vec']['vec']
-            self.add_vec(word, vec)
-        return vec
+            vecjs = json.dumps(str(vec))
+            self.add_vec(word, vecjs)
+        else:
+            vec = str([0] * 128)
+            vecjs = json.dumps(str(vec))
+        return vecjs
+
+if __name__ == "__main__":
+    wordc = Word()
+    while(1):
+        print(wordc.word_vec(raw_input(">>>")))

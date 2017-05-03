@@ -36,12 +36,10 @@ train, test = load_task()
 data = train + test
 
 vocab = sorted(reduce(lambda x, y: x | y, (set(cut2list(q)) for q, c in data)))
-word_idx = dict((c, i + 1) for i, c in enumerate(vocab))
 
-sentence_size = max(map(len, (q for q, c in data)))
 vocab_size = len(vocab) + 1  # +1 for nil word
 
-Q, C, answer_size = vectorize_data(data, word_idx, sentence_size)
+Q, C, answer_size, sentence_size = vectorize_data(data)
 
 c_res = []
 for i in C.tolist():
