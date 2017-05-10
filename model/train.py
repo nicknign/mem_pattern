@@ -20,9 +20,9 @@ tf.flags.DEFINE_float("anneal_stop_epoch", 100, "Epoch number to end annealed lr
 tf.flags.DEFINE_float("max_grad_norm", 40.0, "Clip gradients to this norm.")
 tf.flags.DEFINE_integer("evaluation_interval", 10, "Evaluate and print results every x epochs")
 tf.flags.DEFINE_integer("batch_size", 32, "Batch size for training.")
-tf.flags.DEFINE_integer("hops", 3, "Number of hops in the Memory Network.")
+tf.flags.DEFINE_integer("hops", 4, "Number of hops in the Memory Network.")
 tf.flags.DEFINE_integer("epochs", 5000, "Number of epochs to train for.")
-tf.flags.DEFINE_integer("embedding_size", 100, "Embedding size for embedding matrices.")
+tf.flags.DEFINE_integer("embedding_size", 128, "Embedding size for embedding matrices.")
 tf.flags.DEFINE_integer("memory_size", 50, "Maximum size of memory.")
 tf.flags.DEFINE_integer("random_state", None, "Random state.")
 FLAGS = tf.flags.FLAGS
@@ -35,13 +35,7 @@ conf = ConfigParser.ConfigParser()
 train, test = load_task()
 data = train + test
 
-vocab = sorted(reduce(lambda x, y: x | y, (set(cut2list(q)) for q, c in data)))
-word_idx = dict((c, i + 1) for i, c in enumerate(vocab))
-
-sentence_size = max(map(len, (q for q, c in data)))
-vocab_size = len(vocab) + 1  # +1 for nil word
-
-Q, C, answer_size = vectorize_data(data, word_idx, sentence_size)
+Q, C, answer_size, sentence_size = vectorize_data(data)
 
 c_res = []
 for i in C.tolist():
@@ -60,13 +54,12 @@ conf.set("RNN", "batch_size", batch_size)
 conf.set("RNN", "answer_size", answer_size)
 conf.set("RNN", "sentence_size", sentence_size)
 conf.set("RNN", "embedding_size", FLAGS.embedding_size)
-conf.set("RNN", "vocab_size", vocab_size)
 conf.set("RNN", "hops", FLAGS.hops)
 conf.set("RNN", "max_grad_norm", FLAGS.max_grad_norm)
 conf.write(open("./data/RNN.cfg", "w"))
 
 with tf.Session() as sess:
-    model = MemN2N(batch_size, answer_size, sentence_size, FLAGS.embedding_size, vocab_size, session=sess,
+    model = MemN2N(batch_size, answer_size, sentence_size, FLAGS.embedding_size, session=sess,
                    hops=FLAGS.hops, max_grad_norm=FLAGS.max_grad_norm)
     for t in range(1, FLAGS.epochs+1):
         # Stepped learning rate

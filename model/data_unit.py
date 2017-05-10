@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import jieba as jb
 import json
+import word
 
 exclude_re = re.compile(u"[,，【】<>{};?？'\"]")
 
@@ -42,18 +43,33 @@ def cut2list(string):
     return result
 
 
-def vectorize_data(data, word_idx, sentence_size):
+def vectorize_data(data):
+    wordaip = word.Word()
     Q = []
     C = []
     Ans = []
-
+    maxsize = 0
+    for question, _ in data:
+        size = len(cut2list(question))
+        if size > maxsize:
+            maxsize = size
+    sentence_size = maxsize
     for question, category in data:
         quesl = cut2list(question)
         lq = max(0, sentence_size - len(quesl))
-        q = [word_idx[w] for w in quesl] + [0] * lq
+        q = []
+        for w in quesl:
+            vecjs = wordaip.word_vec(w)
+            vec = json.loads(vecjs)
+            while isinstance(vec, unicode):
+                vec = json.loads(vec)
+            q.append(vec)
+        q.extend([[0]*len(q[0])]*lq)
+        Q.append(q)
+
         if category not in Ans:
             Ans.append(category)
-        Q.append(q)
+
 
     answer_size = len(Ans)
 
@@ -63,7 +79,6 @@ def vectorize_data(data, word_idx, sentence_size):
         y[index] = 1
         C.append(y)
 
-    save_file(word_idx, "./data/vocab.json")
     save_file(Ans, "./data/ans.json")
 
-    return np.array(Q), np.array(C), answer_size
+    return np.array(Q), np.array(C), answer_size, sentence_size
