@@ -16,22 +16,6 @@ from six.moves import range
 from data_unit import cut2list
 
 
-def position_encoding(sentence_size, embedding_size):
-    """
-    Position Encoding described in section 4.1 [1]
-    """
-    encoding = np.ones((embedding_size, sentence_size), dtype=np.float32)
-    ls = sentence_size+1
-    le = embedding_size+1
-    for i in range(1, le):
-        for j in range(1, ls):
-            encoding[i-1, j-1] = (i - (embedding_size+1)/2) * (j - (sentence_size+1)/2)
-    encoding = 1 + 4 * encoding / embedding_size / sentence_size
-    # Make position encoding of time words identity to avoid modifying them
-    encoding[:, -1] = 1.0
-    return np.transpose(encoding)
-
-
 def zero_nil_slot(t, name=None):
     """
     Overwrites the nil_slot (first row) of the input Tensor with zeros.
@@ -64,12 +48,11 @@ def add_gradient_noise(t, stddev=1e-3, name=None):
 
 class MemN2N(object):
     """End-To-End Memory Network."""
-    def __init__(self, batch_size, answer_size, sentence_size, embedding_size, vocab_size,
+    def __init__(self, batch_size, answer_size, sentence_size, embedding_size,
                  hops=3,
                  max_grad_norm=40.0,
                  nonlin=None,
                  initializer=tf.random_normal_initializer(stddev=0.1),
-                 encoding=position_encoding,
                  session=tf.Session(),
                  name='MemN2N'):
         """Creates an End-To-End Memory Network
@@ -108,7 +91,6 @@ class MemN2N(object):
 
         self._batch_size = batch_size
         self._answer_size = answer_size
-        self._vocab_size = vocab_size
         self._sentence_size = sentence_size
         self._embedding_size = embedding_size
         self._hops = hops
@@ -121,8 +103,6 @@ class MemN2N(object):
         self._build_vars()
 
         self._opt = tf.train.GradientDescentOptimizer(learning_rate=self._lr)
-
-        self._encoding = tf.constant(encoding(self._sentence_size, self._embedding_size), name="encoding")
 
         # cross entropy
         logits = self._inference(self._queries)  # (batch_size, vocab_size)
@@ -165,15 +145,14 @@ class MemN2N(object):
 
 
     def _build_inputs(self):
-        self._queries = tf.placeholder(tf.int32, [None, self._sentence_size], name="queries")
+        self._queries = tf.placeholder(tf.float32, [None, self._sentence_size, self._embedding_size], name="queries")
         self._answers = tf.placeholder(tf.int32, [None, self._answer_size], name="answers")
         self._lr = tf.placeholder(tf.float32, [], name="learning_rate")
 
     def _build_vars(self):
         with tf.variable_scope(self._name):
-            nil_word_slot = tf.zeros([1, self._embedding_size])
-            A = tf.concat(axis=0, values=[nil_word_slot, self._init([self._vocab_size-1, self._embedding_size])])
-            C = tf.concat(axis=0, values=[nil_word_slot, self._init([self._vocab_size-1, self._embedding_size])])
+            A = self._init([self._sentence_size, self._embedding_size])
+            C = self._init([self._sentence_size, self._embedding_size])
             W = self._init([self._answer_size, self._embedding_size])
 
 
@@ -201,19 +180,19 @@ class MemN2N(object):
     def _inference(self, queries):
         with tf.variable_scope(self._name):
             # Use A_1 for thee question embedding as per Adjacent Weight Sharing
-            q_emb = tf.nn.embedding_lookup(self.A_1, queries)
-            u_0 = tf.reduce_sum(q_emb * self._encoding, 1)
+            q_emb = self.A_1 * queries
+            u_0 = tf.reduce_sum(q_emb, 1)
             u = [u_0]
 
             for hopn in range(self._hops):
                 if hopn == 0:
-                    m_emb_A = tf.nn.embedding_lookup(self.A_1, queries)
-                    m_A = tf.reduce_sum(m_emb_A * self._encoding, 1)
+                    m_emb_A = self.A_1 * queries
+                    m_A = tf.reduce_sum(m_emb_A, 1)
 
                 else:
                     with tf.variable_scope('hop_{}'.format(hopn - 1)):
-                        m_emb_A = tf.nn.embedding_lookup(self.C[hopn - 1], queries)
-                        m_A = tf.reduce_sum(m_emb_A * self._encoding, 1)
+                        m_emb_A = self.C[hopn - 1] * queries
+                        m_A = tf.reduce_sum(m_emb_A, 1)
 
                 # hack to get around no reduce_dot
                 u_temp = tf.transpose(u[-1], [0, 1])
@@ -224,8 +203,8 @@ class MemN2N(object):
 
                 probs_temp = tf.transpose(tf.expand_dims(probs, -1), [1, 0])
                 with tf.variable_scope('hop_{}'.format(hopn)):
-                    m_emb_C = tf.nn.embedding_lookup(self.C[hopn], queries)
-                m_C = tf.reduce_sum(m_emb_C * self._encoding, 1)
+                    m_emb_C = self.C[hopn] * queries
+                m_C = tf.reduce_sum(m_emb_C, 1)
 
                 c_temp = tf.transpose(m_C, [1, 0])
                 o_k = tf.reduce_sum(c_temp * probs_temp, 1)
@@ -299,8 +278,6 @@ class MemN2N(object):
 
     def load(self, checkpoint_dir):
         tf.logging.warning("model start load")
-        with open("./data/vocab.json", 'r') as pf:
-            self.vacob = json.load(pf)
         with open("./data/ans.json", 'r') as pf:
             self.answer = json.load(pf)
         ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
@@ -322,16 +299,15 @@ class MemN2N(object):
         return simword
 
     def string_to_vec(self, string):
-        vec = [0]*self._sentence_size
+        vector = [[0] * self._embedding_size] * self._sentence_size
         strlist = cut2list(string)
         for index, word in enumerate(strlist):
-            self.word.word_vec(word)
-            if self.vacob.get(word):
-                vec[index] = self.vacob[word]
-            # else:
-            #   simword = self.find_simword(word)
-            #   vec[index] = self.vacob[simword]
-        return vec
+            vecjs = self.word.word_vec(word)
+            vec = json.loads(vecjs)
+            while isinstance(vec, unicode):
+                vec = json.loads(vec)
+            vector[index] = vec
+        return vector
 
     def vec_to_answer(self, maxindex):
         return self.answer[maxindex]
@@ -353,12 +329,11 @@ if __name__ == "__main__":
     answer_size = int(conf.get("RNN", "answer_size"))
     sentence_size = int(conf.get("RNN", "sentence_size"))
     embedding_size = int(conf.get("RNN", "embedding_size"))
-    vocab_size = int(conf.get("RNN", "vocab_size"))
     hops = int(conf.get("RNN", "hops"))
     max_grad_norm = float(conf.get("RNN", "max_grad_norm"))
 
     with tf.Session() as sess:
-        model = MemN2N(batch_size, answer_size, sentence_size, embedding_size, vocab_size, session=sess,
+        model = MemN2N(batch_size, answer_size, sentence_size, embedding_size, session=sess,
                        hops=hops, max_grad_norm=max_grad_norm)
         model.load('./tensorboard/logs/')
         while(1):
