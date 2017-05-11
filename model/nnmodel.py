@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# !/usr/bin/env python
 """End-To-End Memory Networks.
 
 The implementation is based on http://arxiv.org/abs/1503.08895 [1]
