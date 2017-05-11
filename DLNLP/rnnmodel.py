@@ -335,6 +335,6 @@ if __name__ == "__main__":
     with tf.Session() as sess:
         model = MemN2N(batch_size, answer_size, sentence_size, embedding_size, session=sess,
                        hops=hops, max_grad_norm=max_grad_norm)
-        model.load('./tensorboard/logs/')
+        model.load('./model/rnn/')
         while(1):
             print(model.respond(raw_input(">")))

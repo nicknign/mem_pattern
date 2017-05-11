@@ -4,7 +4,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 from data_unit import load_task, cut2list, vectorize_data
-from nnmodel import MemN2N
+from rnnmodel import MemN2N
 from six.moves import range
 from functools import reduce
 from sklearn import metrics
@@ -21,7 +21,7 @@ tf.flags.DEFINE_float("max_grad_norm", 40.0, "Clip gradients to this norm.")
 tf.flags.DEFINE_integer("evaluation_interval", 10, "Evaluate and print results every x epochs")
 tf.flags.DEFINE_integer("batch_size", 32, "Batch size for training.")
 tf.flags.DEFINE_integer("hops", 4, "Number of hops in the Memory Network.")
-tf.flags.DEFINE_integer("epochs", 5000, "Number of epochs to train for.")
+tf.flags.DEFINE_integer("epochs", 2000, "Number of epochs to train for.")
 tf.flags.DEFINE_integer("embedding_size", 128, "Embedding size for embedding matrices.")
 tf.flags.DEFINE_integer("memory_size", 50, "Maximum size of memory.")
 tf.flags.DEFINE_integer("random_state", None, "Random state.")
@@ -48,6 +48,8 @@ batch_size = FLAGS.batch_size
 
 batches = zip(range(0, n_train-batch_size, batch_size), range(batch_size, n_train, batch_size))
 batches = [(start, end) for start, end in batches]
+if batches[-1][1] < n_train:
+    batches.append((batches[-1][1], n_train - 1))
 
 conf.add_section('RNN')
 conf.set("RNN", "batch_size", batch_size)
@@ -95,7 +97,7 @@ with tf.Session() as sess:
             print('Total Cost:', total_cost)
             print('Training Accuracy:', train_acc)
             print('-----------------------')
-            model.saver.save(sess, './tensorboard/logs/data.chkp')
+            model.saver.save(sess, './model/rnn/data.chkp')
 
 
 

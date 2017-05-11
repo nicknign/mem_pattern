@@ -227,7 +227,7 @@ if __name__ == "__main__":
                     num_filters=num_filters,
                     l2_reg_lambda=l2_reg_lambda,
                     session=sess)
-        model.load('./tensorboard/logs/')
+        model.load('./model/cnn/')
         while(1):
             print(model.respond(raw_input(">"), dropout_keep_prob))
 

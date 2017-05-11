@@ -94,7 +94,7 @@ with tf.Session() as sess:
             print('Total Cost:', total_cost)
             print('Training Accuracy:', train_acc)
             print('-----------------------')
-            model.saver.save(sess, './tensorboard/logs/data.chkp')
+            model.saver.save(sess, './model/cnn/data.chkp')
 
 
 
